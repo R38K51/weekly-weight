@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#eef2ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#171b19" media="(prefers-color-scheme: dark)">
+<title>週イチ体重</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #eef2ef;
+    --card: #ffffff;
+    --text: #24231f;
+    --muted: #5f5c54;
+    --line: #cfcbc0;
+    /* Decoration only (design review 2, fix 4): the frames of the sections, the cards
+       and the table rows. The fields keep --field-line, which stays 3:1 or more. */
+    --card-line: #d9e0dc;
+    --field-line: #857f72;
+    --accent: #2f6f62;
+    --accent-text: #ffffff;
+    --error: #a3481f;
+    --focus: #1a56c4;
+
+    --font-body: "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    --fs-base: 1rem;
+    --fs-small: 0.875rem;
+    --fs-number: 1.5rem;
+    --fs-input: 1.5rem;
+    --fs-h1: 1.75rem;
+    --fs-h2: 1.125rem;
+    --lh: 1.7;
+
+    --sp-1: 4px;
+    --sp-2: 8px;
+    --sp-3: 12px;
+    --sp-4: 16px;
+    --sp-5: 24px;
+    --sp-6: 32px;
+    --radius: 8px;
+    --tap: 48px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #171b19;
+      --card: #262725;
+      --text: #ecebe6;
+      --muted: #b0aea6;
+      --line: #4a4b46;
+      --card-line: #2f3733;
+      --field-line: #85857e;
+      --accent: #7cc4b2;
+      --accent-text: #14211e;
+      --error: #f0a47c;
+      --focus: #8db4ff;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: var(--fs-base);
+    line-height: var(--lh);
+    overflow-wrap: anywhere;
+  }
+  main {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: var(--sp-5) var(--sp-4) calc(var(--sp-6) + 24px);
+  }
+  h1 { font-size: var(--fs-h1); margin: 0 0 var(--sp-4); letter-spacing: 0.02em; text-wrap: balance; }
+  h2 { font-size: var(--fs-h2); margin: 0 0 var(--sp-3); text-wrap: balance; }
+  /* Proportional widths for the Japanese punctuation in the headings only, not in numbers. */
+  h1, h2 { font-feature-settings: "palt"; }
+  p { margin: 0; }
+  /* Design review 2, addition 1: only the record band is a surface; the other parts sit
+     on the page with a thin line on top, so the page is not a stack of cards. */
+  section {
+    background: none;
+    border: 0;
+    border-top: 1px solid var(--card-line);
+    border-radius: 0;
+    padding: var(--sp-5) 0 0;
+    margin-bottom: var(--sp-3);
+  }
+  section[aria-labelledby="h-record"] {
+    background: var(--card);
+    border: 1px solid var(--card-line);
+    border-radius: 12px;
+    padding: var(--sp-5);
+  }
+  section[hidden], [hidden] { display: none !important; }
+
+  label { display: block; margin-bottom: var(--sp-1); }
+  input[type="text"], input[type="date"] {
+    display: block;
+    width: 100%;
+    min-height: var(--tap);
+    padding: var(--sp-2) var(--sp-3);
+    font: inherit;
+    font-size: var(--fs-base);
+    color: var(--text);
+    background: var(--card);
+    border: 1px solid var(--field-line);
+    border-radius: var(--radius);
+  }
+  #kg { min-height: 56px; font-size: var(--fs-input); font-variant-numeric: tabular-nums; }
+  .field + .field { margin-top: var(--sp-4); }
+  .field-error { color: var(--error); font-size: var(--fs-small); margin-top: var(--sp-1); }
+  input[aria-invalid="true"] { border-color: var(--error); }
+
+  button {
+    display: block;
+    width: 100%;
+    min-height: var(--tap);
+    padding: var(--sp-2) var(--sp-4);
+    font: inherit;
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+  button + button { margin-top: var(--sp-3); }
+  button, input { touch-action: manipulation; }
+  .primary { background: var(--accent); color: var(--accent-text); border: 1px solid var(--accent); font-weight: 700; }
+  .secondary { background: transparent; color: var(--text); border: 1px solid var(--field-line); }
+  /* Colour only, no motion (design 4-3). The focus outline stays stronger than hover. */
+  .secondary:hover:not(:disabled) { border-color: var(--text); }
+  .primary:hover:not(:disabled) { filter: brightness(0.94); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  ::placeholder { color: var(--muted); opacity: 1; }
+  form .primary { margin-top: var(--sp-4); }
+
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .note { color: var(--muted); font-size: var(--fs-small); margin-top: var(--sp-3); }
+  .notice { margin-top: var(--sp-3); }
+  .error { color: var(--error); margin-top: var(--sp-3); }
+  .done, .panel {
+    margin-top: var(--sp-3);
+    padding: var(--sp-3);
+    background: var(--bg);
+    border-left: 4px solid var(--accent);
+  }
+  .done:empty { display: none; }
+  .done .fixed { color: var(--muted); font-size: var(--fs-small); }
+  .panel p { margin-bottom: var(--sp-3); }
+
+  /* Two columns only when two cards of 12.5625em fit: from 480 px wide at the standard
+     text size, and never at 200% text, where a number would break inside (design 3-4). */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.5625em), 1fr)); gap: var(--sp-3); }
+  /* Design review 2, fix 3: no frame around the numbers part, so there is no frame in a
+     frame. The four cards sit on the page, and only the latest weight stands out. */
+  #numbers-section { background: none; border: 0; padding: 0; }
+  #numbers-section > h2 { margin-bottom: var(--sp-2); }
+  .card { background: var(--card); border: 1px solid var(--card-line); border-radius: var(--radius); padding: var(--sp-3); }
+  .card .label { font-size: var(--fs-small); color: var(--muted); text-wrap: balance; }
+  .card .value { font-size: var(--fs-number); font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: normal; }
+  /* The first card is the latest weight (app.js renderNumbers): the largest number on the page. */
+  .card:first-child .value { font-size: 2.5rem; line-height: 1.3; color: var(--text); }
+  /* Addition 3a: the unit is half the size of the number, in the quiet colour. */
+  .card .value .unit { font-size: 0.5em; font-weight: 400; color: var(--muted); }
+  /* Two lines of near equal length, so "差" is never left alone on the last line. */
+  .card .sub { font-size: var(--fs-small); color: var(--muted); text-wrap: balance; }
+  .next { margin-top: var(--sp-3); }
+
+  svg { display: block; width: 100%; height: auto; }
+  /* app.js draws the chart at its shown width, so this is the real size on every screen. */
+  svg text { fill: var(--muted); font-size: 0.875rem; font-family: var(--font-body); }
+
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: var(--sp-2) var(--sp-1); border-top: 1px solid var(--card-line); vertical-align: top; }
+  /* The weight and the difference line up on the right, digit under digit. */
+  th:nth-child(n+2), td:nth-child(n+2) { text-align: right; }
+  tr.gap td { text-align: left; }
+  th { font-size: var(--fs-small); color: var(--muted); font-weight: 400; border-top: 0; }
+  /* Numbers never break, not even inside "64.8" (overflow-wrap: anywhere is on body). */
+  td.num, td .num, th .num { white-space: nowrap; overflow-wrap: normal; }
+  /* The week column gets room first, so dates are not cut into one character per line. */
+  th:first-child { width: 45%; }
+  /* No week cell ends with one or two characters alone on the last line. */
+  td:first-child { word-break: auto-phrase; text-wrap: balance; }
+  tr.gap td { color: var(--muted); font-size: var(--fs-small); }
+  #more, #discard { margin-top: var(--sp-3); }
+  #discard-panel { margin-bottom: var(--sp-3); }
+
+  /* Design 8-A: right under the date field (under the error when there is one). */
+  .week-notice { margin-top: var(--sp-1); word-break: auto-phrase; text-wrap: balance; }
+  /* Design 8-C: above the history table, in the quiet style. */
+  .history-hint { color: var(--muted); font-size: var(--fs-small); margin-bottom: var(--sp-2); }
+  /* Design 8-E: right under the backup heading, the same size as the body text. */
+  #h-backup { margin-bottom: var(--sp-2); }
+  .last-backup + .backup-text { margin-top: var(--sp-3); }
+
+  .backup-buttons { margin-top: var(--sp-4); }
+  .backup-text > * + * { margin-top: var(--sp-3); }
+  .steps { margin: 0; padding-left: 1.5em; }
+
+  /* From 64em wide (1024 px at the standard text size; with 200% text in the browser
+     setting the page stays in one column, design 3-4): the record is a wide band at the
+     top, the numbers and the chart on the left, the history on the right, and the
+     backup at the bottom. Nothing is sticky (design review 2, fixes 1, 2 and 7). Only
+     the places change; the HTML order (Tab and reading order) stays the same. While the
+     results are not shown (saved data that cannot be read or stored), the page keeps
+     the one-column layout. */
+  @media (min-width: 64em) {
+    main:not(:has(#numbers-section[hidden])) {
+      max-width: 1120px;
+      padding: var(--sp-5) var(--sp-6) calc(var(--sp-6) + 24px);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      /* Only the chart row takes what is left over, so there is no odd gap when empty. */
+      grid-template-rows: auto auto auto 1fr auto;
+      column-gap: var(--sp-5);
+      row-gap: var(--sp-4);
+      align-items: start;
+      grid-template-areas:
+        "title title"
+        "rec   rec"
+        "num   hist"
+        "chart hist"
+        "bak   bak";
+    }
+    main:not(:has(#numbers-section[hidden])) > h1 { grid-area: title; margin: 0; }
+    main:not(:has(#numbers-section[hidden])) > section { margin-bottom: 0; }
+    main:not(:has(#numbers-section[hidden])) > section[aria-labelledby="h-record"] {
+      grid-area: rec;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: var(--sp-5);
+    }
+    /* Everything in the band is a full row, except the two notes, side by side. */
+    main:not(:has(#numbers-section[hidden])) > section[aria-labelledby="h-record"] > * { grid-column: 1 / -1; }
+    main:not(:has(#numbers-section[hidden])) > section[aria-labelledby="h-record"] > .note { grid-column: auto; }
+    /* The numbers part keeps no frame and no inner space (fix 3). */
+    main:not(:has(#numbers-section[hidden])) > #numbers-section { grid-area: num; padding: 0; }
+    main:not(:has(#numbers-section[hidden])) > #chart-section { grid-area: chart; }
+    main:not(:has(#numbers-section[hidden])) > #history-section { grid-area: hist; }
+    main:not(:has(#numbers-section[hidden])) > section[aria-labelledby="h-backup"] { grid-area: bak; }
+    /* The left column is about 474 px or more: the four numbers are 2 x 2, and 200% text
+       is never here (the page is one column then). */
+    main:not(:has(#numbers-section[hidden])) .cards {
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.5625em), 1fr));
+    }
+
+    /* The weight, the date and the button on one line. The notices under the date
+       field do not move the button (align-items: start). */
+    main:not(:has(#numbers-section[hidden])) #entry-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(9rem, 12.5rem);
+      column-gap: var(--sp-4);
+      align-items: start;
+    }
+    main:not(:has(#numbers-section[hidden])) #entry-form .field + .field { margin-top: 0; }
+    main:not(:has(#numbers-section[hidden])) #entry-form #date { min-height: 56px; }
+    main:not(:has(#numbers-section[hidden])) #entry-form .primary {
+      min-height: 56px;
+      /* Down by the height of a label, so the button lines up with the fields. */
+      margin-top: calc(var(--lh) * 1em + var(--sp-1));
+    }
+
+    main:not(:has(#numbers-section[hidden])) .backup-text { max-width: 40em; }
+    /* The two backup buttons side by side: save on the left, load on the right. */
+    main:not(:has(#numbers-section[hidden])) .backup-buttons { display: flex; gap: var(--sp-3); max-width: 36em; }
+    main:not(:has(#numbers-section[hidden])) .backup-buttons button { flex: 1; margin-top: 0; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>週イチ体重</h1>
+
+  <section aria-labelledby="h-record">
+    <h2 id="h-record">記録</h2>
+    <p id="broken" class="error" role="alert" hidden>保存された記録を読み込めませんでした。記録は変更していません。バックアップがあれば読み込んでください。バックアップがない場合は、保存データを消して、記録0件から始められます。消した保存データは戻せません。</p>
+    <button type="button" class="secondary" id="discard" hidden>保存データを消して、新しく始める</button>
+    <div id="discard-panel" class="panel" hidden>
+      <p>読み込めなかった保存データを消して、記録0件から始めます。消した保存データは戻せません。バックアップがあるときは、消さずに「バックアップを読み込む」を使ってください。</p>
+      <button type="button" class="primary" id="discard-yes">消して始める</button>
+      <button type="button" class="secondary" id="discard-no">やめる</button>
+    </div>
+    <p id="unavailable" class="error" role="alert" hidden>このブラウザでは、記録の保存が許可されていません。ブラウザの設定でCookie（サイトのデータ）の保存を許可するか、プライベートブラウズではない通常の画面で、開き直してください。記録は変更していません。</p>
+    <form id="entry-form" novalidate>
+      <div class="field">
+        <label for="kg">体重（kg）</label>
+        <input id="kg" name="weight" type="text" inputmode="decimal" placeholder="例：62.4" autocomplete="off">
+        <p id="kg-error" class="field-error" role="alert" hidden></p>
+      </div>
+      <div class="field">
+        <label for="date">記録する日</label>
+        <input id="date" name="recorded-on" type="date">
+        <p id="date-error" class="field-error" role="alert" hidden></p>
+        <p id="week-notice" class="week-notice" hidden></p>
+      </div>
+      <button type="submit" class="primary" id="submit">記録する</button>
+    </form>
+    <p id="overwrite" class="notice" role="status" aria-live="polite" hidden></p>
+    <p id="save-error" class="error" role="alert" hidden></p>
+    <div id="done" class="done" role="status" aria-live="polite"></div>
+    <p class="note">週に1回、1つの数字を入れるだけです。同じ週にもう一度記録すると、その週の記録を置き換えます。</p>
+    <p class="note"><span data-storage-explanation>記録はこの端末のブラウザの中だけに保存されます。</span>入力した内容は外部へ送信しません。</p>
+  </section>
+
+  <section id="numbers-section" aria-labelledby="h-numbers">
+    <h2 id="h-numbers">数字</h2>
+    <div id="numbers"></div>
+  </section>
+
+  <section id="chart-section" aria-labelledby="h-chart">
+    <h2 id="h-chart">推移</h2>
+    <div id="chart"></div>
+    <p id="chart-note" class="note" hidden></p>
+  </section>
+
+  <section id="history-section" aria-labelledby="h-history">
+    <h2 id="h-history">これまでの記録</h2>
+    <p id="history-hint" class="history-hint" hidden></p>
+    <div id="history"></div>
+    <button type="button" class="secondary" id="more" hidden>さらに表示</button>
+  </section>
+
+  <section aria-labelledby="h-backup">
+    <h2 id="h-backup">バックアップと保存について</h2>
+    <p id="last-backup" class="last-backup"></p>
+    <div class="backup-text">
+      <p data-storage-explanation>記録は、この端末のブラウザの中だけに保存されます。ブラウザのデータを消したとき、端末の故障や買い替え、別のブラウザで開いたときは、記録が消えるか、見られなくなります。</p>
+      <p data-storage-explanation>バックアップをしなくても、毎週の記録はできます。機種変更や別の端末で見るときのために、月に1回ほどバックアップを保存してください。</p>
+      <div data-storage-explanation>
+        <p>端末を移すとき：</p>
+        <ol class="steps">
+          <li>今の端末で「バックアップを保存」</li>
+          <li>できたバックアップを、メールなどで新しい端末へ</li>
+          <li>新しい端末で「バックアップを読み込む」</li>
+        </ol>
+      </div>
+    </div>
+    <div class="backup-buttons">
+      <button type="button" class="primary" id="export">バックアップを保存</button>
+      <button type="button" class="secondary" id="import">バックアップを読み込む</button>
+      <input id="import-file" type="file" accept=".json,application/json" hidden>
+    </div>
+    <p id="backup-status" class="notice" role="status" aria-live="polite"></p>
+    <div id="replace-panel" class="panel" hidden>
+      <p id="replace-text"></p>
+      <button type="button" class="primary" id="replace-yes">置き換える</button>
+      <button type="button" class="secondary" id="replace-no">やめる</button>
+    </div>
+  </section>
+</main>
+
+<script src="core.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
