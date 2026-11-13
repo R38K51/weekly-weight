@@ -12,7 +12,7 @@ No account, no install, nothing you enter is sent anywhere. Open it in a browser
 ![Dependencies](https://img.shields.io/badge/dependencies-none-2f6f62)
 ![Data](https://img.shields.io/badge/data-stays%20in%20your%20browser-2f6f62)
 ![Node](https://img.shields.io/badge/tests-Node.js%2022%2B-2f6f62)
-![License](https://img.shields.io/badge/license-AGPL--3.0--only-2f6f62)
+![License](https://img.shields.io/badge/license-MIT-2f6f62)
 
 [English](#english) · [日本語](#日本語)
 
@@ -137,7 +137,7 @@ Please report bugs and unclear points as an Issue in this repository. **Do not p
 
 ### License
 
-[AGPL-3.0-only](LICENSE). Copyright (c) 2026 R38K51.
+[MIT](LICENSE). Copyright (c) 2026 R38K51.
 
 ---
 
@@ -242,4 +242,4 @@ node --test
 
 ### ライセンス
 
-[AGPL-3.0-only](LICENSE)。Copyright (c) 2026 R38K51。
+[MIT](LICENSE)。Copyright (c) 2026 R38K51。
