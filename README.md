@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/icon.png" width="96" alt="weekly-weight icon">
+
 # Weekly Weight / 週イチ体重
 
 **A browser page for logging your weight once a week, as one number.**<br>
